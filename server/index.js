@@ -5,6 +5,7 @@ const passport = require('passport');
 const GitHubStrategy = require('passport-github2').Strategy;
 const cors = require('cors');
 const app = express();
+const {getGitHubData} = require('./github');
 app.use(cors({
     origin: process.env.CLIENT_URL,
     credentials: true
@@ -44,5 +45,19 @@ app.getMaxListeners('/auth/logout', (req, res) => {
     req.logout(() => {
         res.redirect(process.env.CLIENT_URL);
     });
+});
+app.get('/github/data', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Not logged in' });
+  } try {
+    const data = await getGitHubData(
+      req.user.accessToken,
+      req.user.profile.username
+    );
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch GitHub data' });
+  }
 });
 app.listen(3000, () => console.log('server running on port 3000'));
